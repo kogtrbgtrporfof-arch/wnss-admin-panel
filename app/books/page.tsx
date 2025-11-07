@@ -216,8 +216,8 @@ export default function BooksPage() {
 
   const getLevelBadge = (level: string) => {
     return level === 'O' 
-      ? 'bg-blue-100 text-blue-800'
-      : 'bg-purple-100 text-purple-800'
+      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+      : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
   }
 
   if (loading) {
@@ -225,8 +225,8 @@ export default function BooksPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Books</h1>
-            <p className="text-gray-500 mt-1">Loading books...</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Books Management</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">Loading books...</p>
           </div>
         </div>
         <Card>
@@ -251,44 +251,61 @@ export default function BooksPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Books</h1>
-          <p className="text-gray-500 mt-1">
-            Manage your book collection ({books.length} books) - Real-time updates enabled 🔴
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Books Management</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Manage your book collection • {books.length} total books • <span className="text-green-600 dark:text-green-400">●</span> Real-time sync
           </p>
         </div>
-        <Button onClick={openAddModal}>
+        <Button onClick={openAddModal} className="bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600">
           <Plus className="w-4 h-4 mr-2" />
           Add New Book
         </Button>
       </div>
 
-      {/* Search */}
-      <Card>
-        <CardContent className="p-6">
-          <Input
-            icon={Search}
-            placeholder="Search books by title, author, or subject..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </CardContent>
-      </Card>
+      {/* Search & Filters */}
+      <div className="card">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              icon={Search}
+              placeholder="Search books by title, author, or subject..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+            />
+          </div>
+          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+            <BookOpen className="w-4 h-4" />
+            <span>{filteredBooks.length} results</span>
+          </div>
+        </div>
+      </div>
 
       {/* Books Table */}
       <Card>
         <CardHeader>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Book Collection ({filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'})
-          </h2>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-sky-100 dark:bg-sky-900/40 rounded-lg">
+              <BookOpen className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Book Collection ({filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'})
+            </h2>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {filteredBooks.length === 0 ? (
             <div className="text-center py-12">
-              <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-500 mb-4">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 font-medium mb-2">
                 {searchTerm ? 'No books match your search' : 'No books added yet'}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+                {searchTerm ? 'Try adjusting your search terms' : 'Start building your library catalog'}
               </p>
               {!searchTerm && (
                 <Button onClick={openAddModal}>

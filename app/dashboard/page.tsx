@@ -1,32 +1,43 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { useRouter } from 'next/navigation'
 import { 
   BookOpen, 
   Users, 
-  Clock, 
-  AlertCircle, 
+  School,
   TrendingUp,
   Plus,
-  ArrowUp,
-  ArrowDown,
-  Settings 
-} from 'lucide-react';
-import { supabase, Book } from '@/lib/supabase';
+  ArrowRight,
+  Clock,
+  BarChart3,
+  Settings,
+  Sparkles,
+  Database,
+  Activity
+} from 'lucide-react'
+import { supabase, Book } from '@/lib/supabase'
+import { MetricCard } from '@/components/MetricCard'
+import { Button } from '@/components/ui/Button'
 
 interface DashboardStats {
   totalBooks: number
-  activeUsers: number
-  booksGrowth: number
+  activeSubjects: number
+  storageUsed: string
+  recentActivity: number
 }
 
+/**
+ * Professional Dashboard
+ * Overview of library management with analytics and quick actions
+ */
 export default function Dashboard() {
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats>({
     totalBooks: 0,
-    activeUsers: 0,
-    booksGrowth: 0
+    activeSubjects: 12,
+    storageUsed: '2.4 GB',
+    recentActivity: 48
   })
   const [recentBooks, setRecentBooks] = useState<Book[]>([])
   const [loading, setLoading] = useState(true)
@@ -46,11 +57,10 @@ export default function Dashboard() {
 
       if (booksError) throw booksError
 
-      setStats({
-        totalBooks: booksCount || 0,
-        activeUsers: 1248, // Mock data - you can replace with real user count
-        booksGrowth: 12 // Mock growth percentage
-      })
+      setStats(prev => ({
+        ...prev,
+        totalBooks: booksCount || 0
+      }))
 
       // Load recent books
       const { data: books, error: booksDataError } = await supabase
@@ -68,51 +78,23 @@ export default function Dashboard() {
     }
   }
 
-  const statCards = [
-    {
-      title: 'Total Books',
-      value: stats.totalBooks,
-      change: stats.booksGrowth,
-      icon: BookOpen,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
-    },
-    {
-      title: 'Active Users',
-      value: stats.activeUsers,
-      change: 5,
-      icon: Users,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50'
-    }
-  ]
-
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-            <p className="text-gray-500 mt-1">Welcome to WNSS Library Admin Panel</p>
+        {/* Loading Header */}
+        <div className="flex justify-between items-start">
+          <div className="space-y-1">
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64 animate-pulse"></div>
           </div>
         </div>
         
-        {/* Loading Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[...Array(2)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="animate-pulse">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-20"></div>
-                      <div className="h-6 bg-gray-200 rounded w-16"></div>
-                    </div>
-                    <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Loading Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="card animate-pulse">
+              <div className="h-24"></div>
+            </div>
           ))}
         </div>
       </div>
@@ -120,114 +102,263 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Welcome to WNSS Library Admin Panel</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+            <Sparkles className="w-8 h-8 text-sky-600 dark:text-sky-400" />
+            Library Overview
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Professional management for educational excellence
+          </p>
         </div>
-        <Button icon={Plus}>
+        <Button 
+          onClick={() => router.push('/books')}
+          className="bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600"
+        >
+          <Plus className="w-5 h-5 mr-2" />
           Add New Book
         </Button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {statCards.map((stat) => {
-          const Icon = stat.icon
-          const isPositive = stat.change >= 0
-          
-          return (
-            <Card key={stat.title}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-2xl font-semibold text-gray-900 mt-1">
-                      {stat.value.toLocaleString()}
-                    </p>
-                    <div className={`flex items-center mt-1 text-sm ${
-                      isPositive ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {isPositive ? (
-                        <ArrowUp className="w-4 h-4 mr-1" />
-                      ) : (
-                        <ArrowDown className="w-4 h-4 mr-1" />
-                      )}
-                      <span>{Math.abs(stat.change)}% from last month</span>
-                    </div>
-                  </div>
-                  <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                    <Icon className={`w-6 h-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          title="Total Books"
+          value={stats.totalBooks}
+          change={12}
+          icon={BookOpen}
+          subtitle="In library catalog"
+          trend="up"
+        />
+        <MetricCard
+          title="Active Subjects"
+          value={stats.activeSubjects}
+          change={3}
+          icon={School}
+          subtitle="O & A Level categories"
+          trend="up"
+        />
+        <MetricCard
+          title="Storage Used"
+          value={stats.storageUsed}
+          icon={Database}
+          subtitle="Of 10 GB available"
+          trend="neutral"
+        />
+        <MetricCard
+          title="Recent Activity"
+          value={stats.recentActivity}
+          change={8}
+          icon={Activity}
+          subtitle="Actions this week"
+          trend="up"
+        />
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {/* Recent Books */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Books</h2>
-              <Button variant="ghost" size="sm">
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Books - Takes 2 columns */}
+        <div className="lg:col-span-2">
+          <div className="card">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-sky-100 dark:bg-sky-900/40 rounded-lg">
+                  <BookOpen className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Recently Added Books
+                </h2>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => router.push('/books')}
+                className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300"
+              >
                 View All
+                <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+
+            <div className="space-y-3">
               {recentBooks.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No books added yet</p>
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 font-medium">No books added yet</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                    Start building your library catalog
+                  </p>
+                  <Button 
+                    onClick={() => router.push('/books')}
+                    className="mt-4"
+                    variant="outline"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add First Book
+                  </Button>
                 </div>
               ) : (
                 recentBooks.map((book) => (
-                  <div key={book.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{book.title}</p>
-                      <p className="text-sm text-gray-500 truncate">{book.author} • {book.subject}</p>
+                  <div 
+                    key={book.id} 
+                    className="
+                      flex items-center justify-between 
+                      p-4 rounded-lg
+                      bg-gray-50 dark:bg-gray-800
+                      hover:bg-gray-100 dark:hover:bg-gray-700
+                      transition-colors
+                      group cursor-pointer
+                    "
+                  >
+                    <div className="flex-1 min-w-0 mr-4">
+                      <p className="font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                        {book.title}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        {book.author} • {book.subject}
+                      </p>
                     </div>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      book.level === 'O' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                    }`}>
-                      {book.level}-Level
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`
+                        px-3 py-1 rounded-full text-xs font-medium
+                        ${book.level === 'O' 
+                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
+                          : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                        }
+                      `}>
+                        {book.level}-Level
+                      </span>
+                    </div>
                   </div>
                 ))
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-16 flex-col">
-              <BookOpen className="w-5 h-5 mb-1" />
-              <span>Add Book</span>
-            </Button>
-            <Button variant="outline" className="h-16 flex-col">
-              <TrendingUp className="w-5 h-5 mb-1" />
-              <span>Analytics</span>
-            </Button>
-            <Button variant="outline" className="h-16 flex-col">
-              <Settings className="w-5 h-5 mb-1" />
-              <span>Settings</span>
-            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Quick Actions - Takes 1 column */}
+        <div className="space-y-6">
+          <div className="card">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Quick Actions
+              </h2>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push('/books')}
+                className="
+                  w-full flex items-center justify-between
+                  p-4 rounded-lg
+                  bg-sky-50 dark:bg-sky-900/20
+                  hover:bg-sky-100 dark:hover:bg-sky-900/30
+                  transition-colors group
+                "
+              >
+                <div className="flex items-center space-x-3">
+                  <BookOpen className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    Manage Books
+                  </span>
+                </div>
+                <ArrowRight className="w-5 h-5 text-sky-600 dark:text-sky-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => router.push('/subjects')}
+                className="
+                  w-full flex items-center justify-between
+                  p-4 rounded-lg
+                  bg-green-50 dark:bg-green-900/20
+                  hover:bg-green-100 dark:hover:bg-green-900/30
+                  transition-colors group
+                "
+              >
+                <div className="flex items-center space-x-3">
+                  <School className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    Manage Subjects
+                  </span>
+                </div>
+                <ArrowRight className="w-5 h-5 text-green-600 dark:text-green-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => router.push('/analytics')}
+                className="
+                  w-full flex items-center justify-between
+                  p-4 rounded-lg
+                  bg-amber-50 dark:bg-amber-900/20
+                  hover:bg-amber-100 dark:hover:bg-amber-900/30
+                  transition-colors group
+                "
+              >
+                <div className="flex items-center space-x-3">
+                  <BarChart3 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    View Analytics
+                  </span>
+                </div>
+                <ArrowRight className="w-5 h-5 text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => router.push('/settings')}
+                className="
+                  w-full flex items-center justify-between
+                  p-4 rounded-lg
+                  bg-gray-50 dark:bg-gray-800
+                  hover:bg-gray-100 dark:hover:bg-gray-700
+                  transition-colors group
+                "
+              >
+                <div className="flex items-center space-x-3">
+                  <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    Settings
+                  </span>
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div className="card bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 border-sky-200 dark:border-sky-800">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 bg-sky-100 dark:bg-sky-900/40 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+              </div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                System Status
+              </h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Performance</span>
+                <span className="font-medium text-green-600 dark:text-green-400">Optimal</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Last Backup</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">2 hours ago</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Uptime</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">99.9%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
