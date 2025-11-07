@@ -1,32 +1,68 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
+import { Modal } from '@/components/ui/Modal'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Edit, 
-  Trash2, 
-  Eye,
-  Download,
-  MoreVertical,
-  BookOpen
-} from 'lucide-react'
+import { Plus, Search, Edit, Trash2, BookOpen, CheckCircle } from 'lucide-react'
 import { supabase, Book } from '@/lib/supabase'
 
+interface BookFormData {
+  title: string
+  author: string
+  level: 'O' | 'A'
+  class: string
+  subject: string
+  description: string
+  keywords: string
+  cover_url: string
+  file_url: string
+  featured: boolean
+}
+
 export default function BooksPage() {
-  const router = useRouter()
   const [books, setBooks] = useState<Book[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingBook, setEditingBook] = useState<Book | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [formData, setFormData] = useState<BookFormData>({
+    title: '',
+    author: '',
+    level: 'O',
+    class: '',
+    subject: '',
+    description: '',
+    keywords: '',
+    cover_url: '',
+    file_url: '',
+    featured: false
+  })
 
   useEffect(() => {
     loadBooks()
+    
+    // Real-time subscription for live updates
+    const subscription = supabase
+      .channel('books_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'books' },
+        (payload) => {
+          console.log('📚 Real-time book update:', payload.eventType)
+          loadBooks() // Reload books on any change
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function loadBooks() {
@@ -45,20 +81,130 @@ export default function BooksPage() {
     }
   }
 
-  async function deleteBook(id: string) {
-    if (!confirm('Are you sure you want to delete this book?')) return
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      author: '',
+      level: 'O',
+      class: '',
+      subject: '',
+      description: '',
+      keywords: '',
+      cover_url: '',
+      file_url: '',
+      featured: false
+    })
+  }
+
+  const openAddModal = () => {
+    resetForm()
+    setIsAddModalOpen(true)
+  }
+
+  const openEditModal = (book: Book) => {
+    setEditingBook(book)
+    setFormData({
+      title: book.title,
+      author: book.author,
+      level: book.level,
+      class: book.class || '',
+      subject: book.subject,
+      description: book.description || '',
+      keywords: book.keywords?.join(', ') || '',
+      cover_url: book.cover_url || '',
+      file_url: book.file_url || '',
+      featured: book.featured
+    })
+    setIsEditModalOpen(true)
+  }
+
+  async function handleAddBook(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+
+    try {
+      const keywordsArray = formData.keywords
+        .split(',')
+        .map(k => k.trim())
+        .filter(k => k.length > 0)
+
+      const { error } = await supabase
+        .from('books')
+        .insert([{
+          ...formData,
+          keywords: keywordsArray.length > 0 ? keywordsArray : null,
+          class: formData.class || null,
+          description: formData.description || null,
+          cover_url: formData.cover_url || null,
+          file_url: formData.file_url || null
+        }])
+
+      if (error) throw error
+
+      setIsAddModalOpen(false)
+      resetForm()
+      alert('✅ Book added successfully!')
+    } catch (error) {
+      console.error('Error adding book:', error)
+      alert('❌ Error adding book. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleEditBook(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingBook) return
+    
+    setSaving(true)
+
+    try {
+      const keywordsArray = formData.keywords
+        .split(',')
+        .map(k => k.trim())
+        .filter(k => k.length > 0)
+
+      const { error } = await supabase
+        .from('books')
+        .update({
+          ...formData,
+          keywords: keywordsArray.length > 0 ? keywordsArray : null,
+          class: formData.class || null,
+          description: formData.description || null,
+          cover_url: formData.cover_url || null,
+          file_url: formData.file_url || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingBook.id)
+
+      if (error) throw error
+
+      setIsEditModalOpen(false)
+      setEditingBook(null)
+      resetForm()
+      alert('✅ Book updated successfully!')
+    } catch (error) {
+      console.error('Error updating book:', error)
+      alert('❌ Error updating book. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDeleteBook(book: Book) {
+    if (!confirm(`Are you sure you want to delete "${book.title}"?`)) return
 
     try {
       const { error } = await supabase
         .from('books')
         .delete()
-        .eq('id', id)
+        .eq('id', book.id)
 
       if (error) throw error
-      loadBooks() // Reload books
+      alert('✅ Book deleted successfully!')
     } catch (error) {
       console.error('Error deleting book:', error)
-      alert('Error deleting book')
+      alert('❌ Error deleting book. Please try again.')
     }
   }
 
@@ -80,11 +226,9 @@ export default function BooksPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Books</h1>
-            <p className="text-gray-500 mt-1">Manage your book collection</p>
+            <p className="text-gray-500 mt-1">Loading books...</p>
           </div>
         </div>
-        
-        {/* Loading Skeleton */}
         <Card>
           <CardContent className="p-6">
             <div className="animate-pulse space-y-4">
@@ -110,37 +254,25 @@ export default function BooksPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Books</h1>
-          <p className="text-gray-500 mt-1">Manage your book collection ({books.length} books)</p>
+          <p className="text-gray-500 mt-1">
+            Manage your book collection ({books.length} books) - Real-time updates enabled 🔴
+          </p>
         </div>
-        <Button
-          onClick={() => router.push('/books/new')}
-        >
+        <Button onClick={openAddModal}>
           <Plus className="w-4 h-4 mr-2" />
           Add New Book
         </Button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                icon={Search}
-                placeholder="Search books by title, author, or subject..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" icon={Filter}>
-                Filters
-              </Button>
-              <Button variant="outline" icon={Download}>
-                Export
-              </Button>
-            </div>
-          </div>
+          <Input
+            icon={Search}
+            placeholder="Search books by title, author, or subject..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </CardContent>
       </Card>
 
@@ -148,21 +280,22 @@ export default function BooksPage() {
       <Card>
         <CardHeader>
           <h2 className="text-lg font-semibold text-gray-900">
-            Book Collection ({filteredBooks.length} books)
+            Book Collection ({filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'})
           </h2>
         </CardHeader>
         <CardContent className="p-0">
           {filteredBooks.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-500">No books found</p>
-              <Button 
-                className="mt-4"
-                onClick={() => router.push('/books/new')}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Book
-              </Button>
+              <p className="text-gray-500 mb-4">
+                {searchTerm ? 'No books match your search' : 'No books added yet'}
+              </p>
+              {!searchTerm && (
+                <Button onClick={openAddModal}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Book
+                </Button>
+              )}
             </div>
           ) : (
             <Table>
@@ -210,6 +343,7 @@ export default function BooksPage() {
                     <TableCell>
                       {book.featured ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <CheckCircle className="w-3 h-3 mr-1" />
                           Featured
                         </span>
                       ) : (
@@ -223,23 +357,18 @@ export default function BooksPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => router.push(`/books/${book.id}`)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/books/edit/${book.id}`)}
+                          onClick={() => openEditModal(book)}
+                          title="Edit book"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => deleteBook(book.id)}
+                          onClick={() => handleDeleteBook(book)}
+                          title="Delete book"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>
                       </div>
                     </TableCell>
@@ -250,6 +379,212 @@ export default function BooksPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Add Book Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Add New Book"
+        size="lg"
+      >
+        <form onSubmit={handleAddBook} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Book Title *"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              required
+              placeholder="Enter book title"
+            />
+            <Input
+              label="Author *"
+              value={formData.author}
+              onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+              required
+              placeholder="Enter author name"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Select
+              label="Level *"
+              value={formData.level}
+              onChange={(e) => setFormData({ ...formData, level: e.target.value as 'O' | 'A' })}
+              required
+            >
+              <option value="O">O-Level</option>
+              <option value="A">A-Level</option>
+            </Select>
+            <Input
+              label="Class"
+              value={formData.class}
+              onChange={(e) => setFormData({ ...formData, class: e.target.value })}
+              placeholder="e.g., Form 1, Form 2"
+            />
+            <Input
+              label="Subject *"
+              value={formData.subject}
+              onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+              required
+              placeholder="e.g., Mathematics"
+            />
+          </div>
+
+          <Textarea
+            label="Description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Brief description of the book..."
+          />
+
+          <Input
+            label="Keywords (comma-separated)"
+            value={formData.keywords}
+            onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
+            placeholder="e.g., algebra, geometry, calculus"
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Cover Image URL"
+              value={formData.cover_url}
+              onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
+              placeholder="https://example.com/cover.jpg"
+            />
+            <Input
+              label="PDF File URL"
+              value={formData.file_url}
+              onChange={(e) => setFormData({ ...formData, file_url: e.target.value })}
+              placeholder="https://example.com/book.pdf"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="featured"
+              checked={formData.featured}
+              onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+              className="w-4 h-4 text-blue-600 rounded"
+            />
+            <label htmlFor="featured" className="text-sm text-gray-700">
+              Mark as Featured Book
+            </label>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Adding...' : 'Add Book'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Book Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Book"
+        size="lg"
+      >
+        <form onSubmit={handleEditBook} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Book Title *"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              required
+            />
+            <Input
+              label="Author *"
+              value={formData.author}
+              onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Select
+              label="Level *"
+              value={formData.level}
+              onChange={(e) => setFormData({ ...formData, level: e.target.value as 'O' | 'A' })}
+              required
+            >
+              <option value="O">O-Level</option>
+              <option value="A">A-Level</option>
+            </Select>
+            <Input
+              label="Class"
+              value={formData.class}
+              onChange={(e) => setFormData({ ...formData, class: e.target.value })}
+            />
+            <Input
+              label="Subject *"
+              value={formData.subject}
+              onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+              required
+            />
+          </div>
+
+          <Textarea
+            label="Description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
+
+          <Input
+            label="Keywords (comma-separated)"
+            value={formData.keywords}
+            onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Cover Image URL"
+              value={formData.cover_url}
+              onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
+            />
+            <Input
+              label="PDF File URL"
+              value={formData.file_url}
+              onChange={(e) => setFormData({ ...formData, file_url: e.target.value })}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="featured-edit"
+              checked={formData.featured}
+              onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+              className="w-4 h-4 text-blue-600 rounded"
+            />
+            <label htmlFor="featured-edit" className="text-sm text-gray-700">
+              Mark as Featured Book
+            </label>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

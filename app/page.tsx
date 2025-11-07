@@ -39,6 +39,22 @@ export default function Dashboard() {
       router.push('/login')
     } else {
       loadDashboardData()
+
+      // Real-time subscription for live dashboard updates
+      const subscription = supabase
+        .channel('dashboard_updates')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'books' },
+          (payload) => {
+            console.log('📊 Dashboard real-time update:', payload.eventType)
+            loadDashboardData() // Reload stats and recent books
+          }
+        )
+        .subscribe()
+
+      return () => {
+        subscription.unsubscribe()
+      }
     }
   }, [router])
 
@@ -134,7 +150,7 @@ export default function Dashboard() {
           <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
           <p className="text-gray-500 mt-1">Welcome to WNSS Library Admin Panel</p>
         </div>
-        <Button icon={Plus}>
+        <Button icon={Plus} onClick={() => router.push('/books')}>
           Add New Book
         </Button>
       </div>
@@ -181,7 +197,11 @@ export default function Dashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Recent Books</h2>
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => router.push('/books')}
+              >
                 View All
               </Button>
             </div>
@@ -220,15 +240,27 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-16 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-16 flex-col"
+              onClick={() => router.push('/books')}
+            >
               <BookOpen className="w-5 h-5 mb-1" />
               <span>Add Book</span>
             </Button>
-            <Button variant="outline" className="h-16 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-16 flex-col"
+              onClick={() => router.push('/analytics')}
+            >
               <TrendingUp className="w-5 h-5 mb-1" />
               <span>Analytics</span>
             </Button>
-            <Button variant="outline" className="h-16 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-16 flex-col"
+              onClick={() => router.push('/settings')}
+            >
               <Settings className="w-5 h-5 mb-1" />
               <span>Settings</span>
             </Button>
