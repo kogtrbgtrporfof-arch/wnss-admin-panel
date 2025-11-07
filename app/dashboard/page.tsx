@@ -4,16 +4,13 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   BookOpen, 
-  Users, 
   School,
   TrendingUp,
   Plus,
   ArrowRight,
-  Clock,
   BarChart3,
   Settings,
   Sparkles,
-  Database,
   Activity
 } from 'lucide-react'
 import { supabase, Book } from '@/lib/supabase'
@@ -23,7 +20,6 @@ import { Button } from '@/components/ui/Button'
 interface DashboardStats {
   totalBooks: number
   activeSubjects: number
-  storageUsed: string
   recentActivity: number
 }
 
@@ -36,7 +32,6 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalBooks: 0,
     activeSubjects: 12,
-    storageUsed: '2.4 GB',
     recentActivity: 48
   })
   const [recentBooks, setRecentBooks] = useState<Book[]>([])
@@ -90,8 +85,8 @@ export default function Dashboard() {
         </div>
         
         {/* Loading Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
             <div key={i} className="card animate-pulse">
               <div className="h-24"></div>
             </div>

@@ -8,7 +8,7 @@ import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Modal } from '@/components/ui/Modal'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
-import { Plus, Search, Edit, Trash2, BookOpen, CheckCircle } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, BookOpen, CheckCircle, Upload, X } from 'lucide-react'
 import { supabase, Book } from '@/lib/supabase'
 
 interface BookFormData {
@@ -32,6 +32,9 @@ export default function BooksPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingBook, setEditingBook] = useState<Book | null>(null)
   const [saving, setSaving] = useState(false)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [formData, setFormData] = useState<BookFormData>({
     title: '',
     author: '',
@@ -94,6 +97,38 @@ export default function BooksPage() {
       file_url: '',
       featured: false
     })
+    setCoverFile(null)
+    setPdfFile(null)
+    setUploadProgress(0)
+  }
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        setCoverFile(file)
+        // Create preview URL
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setFormData({ ...formData, cover_url: reader.result as string })
+        }
+        reader.readAsDataURL(file)
+      } else {
+        alert('Please select an image file for the cover')
+      }
+    }
+  }
+
+  const handlePdfFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type === 'application/pdf') {
+        setPdfFile(file)
+        setFormData({ ...formData, file_url: file.name })
+      } else {
+        alert('Please select a PDF file')
+      }
+    }
   }
 
   const openAddModal = () => {
@@ -461,19 +496,107 @@ export default function BooksPage() {
             placeholder="e.g., algebra, geometry, calculus"
           />
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Cover Image URL"
-              value={formData.cover_url}
-              onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
-              placeholder="https://example.com/cover.jpg"
-            />
-            <Input
-              label="PDF File URL"
-              value={formData.file_url}
-              onChange={(e) => setFormData({ ...formData, file_url: e.target.value })}
-              placeholder="https://example.com/book.pdf"
-            />
+          {/* File Uploads */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Cover Image
+              </label>
+              <div className="flex items-center space-x-4">
+                <label className="flex-1 cursor-pointer">
+                  <div className={`
+                    border-2 border-dashed rounded-lg p-4
+                    ${coverFile 
+                      ? 'border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/20' 
+                      : 'border-gray-300 dark:border-gray-600 hover:border-sky-500 dark:hover:border-sky-400'
+                    }
+                    transition-colors
+                  `}>
+                    <div className="flex items-center justify-center space-x-2">
+                      <Upload className={`w-5 h-5 ${coverFile ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`} />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {coverFile ? coverFile.name : 'Click to upload cover image'}
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverFileChange}
+                    className="hidden"
+                  />
+                </label>
+                {coverFile && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCoverFile(null)
+                      setFormData({ ...formData, cover_url: '' })
+                    }}
+                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              {coverFile && formData.cover_url && (
+                <div className="mt-2">
+                  <img
+                    src={formData.cover_url}
+                    alt="Cover preview"
+                    className="h-32 w-auto rounded border border-gray-200 dark:border-gray-700"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                PDF File *
+              </label>
+              <div className="flex items-center space-x-4">
+                <label className="flex-1 cursor-pointer">
+                  <div className={`
+                    border-2 border-dashed rounded-lg p-4
+                    ${pdfFile 
+                      ? 'border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/20' 
+                      : 'border-gray-300 dark:border-gray-600 hover:border-sky-500 dark:hover:border-sky-400'
+                    }
+                    transition-colors
+                  `}>
+                    <div className="flex items-center justify-center space-x-2">
+                      <Upload className={`w-5 h-5 ${pdfFile ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`} />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {pdfFile ? pdfFile.name : 'Click to upload PDF file'}
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handlePdfFileChange}
+                    className="hidden"
+                  />
+                </label>
+                {pdfFile && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPdfFile(null)
+                      setFormData({ ...formData, file_url: '' })
+                    }}
+                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              {pdfFile && (
+                <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+                  ✓ PDF ready to upload: {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -482,9 +605,9 @@ export default function BooksPage() {
               id="featured"
               checked={formData.featured}
               onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-              className="w-4 h-4 text-blue-600 rounded"
+              className="w-4 h-4 text-blue-600 dark:bg-gray-800 rounded"
             />
-            <label htmlFor="featured" className="text-sm text-gray-700">
+            <label htmlFor="featured" className="text-sm text-gray-700 dark:text-gray-300">
               Mark as Featured Book
             </label>
           </div>
@@ -562,17 +685,107 @@ export default function BooksPage() {
             onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
           />
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Cover Image URL"
-              value={formData.cover_url}
-              onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
-            />
-            <Input
-              label="PDF File URL"
-              value={formData.file_url}
-              onChange={(e) => setFormData({ ...formData, file_url: e.target.value })}
-            />
+          {/* File Uploads - Same as Add Modal */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Cover Image {formData.cover_url && '(Current cover will be replaced)'}
+              </label>
+              <div className="flex items-center space-x-4">
+                <label className="flex-1 cursor-pointer">
+                  <div className={`
+                    border-2 border-dashed rounded-lg p-4
+                    ${coverFile 
+                      ? 'border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/20' 
+                      : 'border-gray-300 dark:border-gray-600 hover:border-sky-500 dark:hover:border-sky-400'
+                    }
+                    transition-colors
+                  `}>
+                    <div className="flex items-center justify-center space-x-2">
+                      <Upload className={`w-5 h-5 ${coverFile ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`} />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {coverFile ? coverFile.name : 'Click to upload new cover'}
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverFileChange}
+                    className="hidden"
+                  />
+                </label>
+                {coverFile && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCoverFile(null)
+                      setFormData({ ...formData, cover_url: editingBook?.cover_url || '' })
+                    }}
+                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              {coverFile && formData.cover_url && (
+                <div className="mt-2">
+                  <img
+                    src={formData.cover_url}
+                    alt="Cover preview"
+                    className="h-32 w-auto rounded border border-gray-200 dark:border-gray-700"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                PDF File {formData.file_url && '(Current file will be replaced)'}
+              </label>
+              <div className="flex items-center space-x-4">
+                <label className="flex-1 cursor-pointer">
+                  <div className={`
+                    border-2 border-dashed rounded-lg p-4
+                    ${pdfFile 
+                      ? 'border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/20' 
+                      : 'border-gray-300 dark:border-gray-600 hover:border-sky-500 dark:hover:border-sky-400'
+                    }
+                    transition-colors
+                  `}>
+                    <div className="flex items-center justify-center space-x-2">
+                      <Upload className={`w-5 h-5 ${pdfFile ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`} />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {pdfFile ? pdfFile.name : 'Click to upload new PDF'}
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handlePdfFileChange}
+                    className="hidden"
+                  />
+                </label>
+                {pdfFile && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPdfFile(null)
+                      setFormData({ ...formData, file_url: editingBook?.file_url || '' })
+                    }}
+                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              {pdfFile && (
+                <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+                  ✓ PDF ready to upload: {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -581,9 +794,9 @@ export default function BooksPage() {
               id="featured-edit"
               checked={formData.featured}
               onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-              className="w-4 h-4 text-blue-600 rounded"
+              className="w-4 h-4 text-blue-600 dark:bg-gray-800 rounded"
             />
-            <label htmlFor="featured-edit" className="text-sm text-gray-700">
+            <label htmlFor="featured-edit" className="text-sm text-gray-700 dark:text-gray-300">
               Mark as Featured Book
             </label>
           </div>
