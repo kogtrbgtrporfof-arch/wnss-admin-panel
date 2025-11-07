@@ -1,10 +1,11 @@
 'use client'
 
-import { Search, User, ChevronRight } from 'lucide-react'
+import { Search, ChevronRight } from 'lucide-react'
 import { Input } from '../ui/Input'
 import { usePathname } from 'next/navigation'
 import { ThemeToggle } from '../ThemeToggle'
 import { Notifications } from '../Notifications'
+import { RoleSelector } from '../RoleSelector'
 
 /**
  * Professional Header Component
@@ -99,23 +100,8 @@ export default function Header() {
         {/* Notifications Dropdown */}
         <Notifications />
 
-        {/* User Menu */}
-        <button className="
-          flex items-center space-x-3 
-          px-3 py-2 rounded-lg
-          hover:bg-gray-100 dark:hover:bg-gray-800
-          transition-colors
-          border border-gray-200 dark:border-gray-700
-          focus-ring
-        ">
-          <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-blue-600 rounded-full flex items-center justify-center shadow-md">
-            <User className="w-4 h-4 text-white" />
-          </div>
-          <div className="hidden lg:block text-left">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Admin User</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
-          </div>
-        </button>
+        {/* Role Selector with User Menu */}
+        <RoleSelector />
       </div>
     </header>
   )

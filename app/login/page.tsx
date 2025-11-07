@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Lock } from 'lucide-react'
+import { DEMO_USERS, setCurrentUser } from '@/lib/roles'
 
 export default function LoginPage() {
   const [password, setPassword] = useState('')
@@ -16,6 +17,8 @@ export default function LoginPage() {
     if (password === 'WNSS2026') {
       // Set authentication token in localStorage
       localStorage.setItem('authToken', 'true')
+      // Set default user as Super Admin
+      setCurrentUser(DEMO_USERS[0])
       router.push('/')
     } else {
       setError('Invalid password. Please try again.')

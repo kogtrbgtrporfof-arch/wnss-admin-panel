@@ -185,8 +185,8 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
-                  <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
-                    Coming Soon
+                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+                    Active
                   </span>
                 </div>
               </div>
