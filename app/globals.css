@@ -56,12 +56,12 @@
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
 
-  /* === DARK THEME - Focused Professional === */
+  /* === DARK THEME - NEON BLUE GLOW === */
   .dark {
-    /* Primary Brand Colors */
-    --primary: 56 189 248; /* #38bdf8 */
-    --primary-light: 125 211 252; /* #7dd3fc */
-    --primary-dark: 14 165 233; /* #0ea5e9 */
+    /* Primary Brand Colors - NEON BLUE GLOW */
+    --primary: 96 165 250; /* #60a5fa - Electric Neon Blue */
+    --primary-light: 147 197 253; /* #93c5fd - Glowing Blue */
+    --primary-dark: 59 130 246; /* #3b82f6 - Intense Blue */
     
     /* Application Colors */
     --background: 15 23 42; /* #0f172a */
@@ -296,5 +296,30 @@
   ::selection {
     background-color: rgb(var(--primary) / 0.3);
     color: rgb(var(--text-primary));
+  }
+
+  /* NEON BLUE GLOW EFFECTS */
+  .neon-glow {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3),
+                0 0 20px rgba(59, 130, 246, 0.2),
+                0 0 30px rgba(59, 130, 246, 0.1);
+  }
+
+  .neon-glow-strong {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5),
+                0 0 30px rgba(59, 130, 246, 0.3),
+                0 0 45px rgba(59, 130, 246, 0.2);
+  }
+
+  .dark .neon-glow {
+    box-shadow: 0 0 15px rgba(96, 165, 250, 0.4),
+                0 0 30px rgba(96, 165, 250, 0.3),
+                0 0 45px rgba(96, 165, 250, 0.2);
+  }
+
+  .dark .neon-glow-strong {
+    box-shadow: 0 0 20px rgba(96, 165, 250, 0.6),
+                0 0 40px rgba(96, 165, 250, 0.4),
+                0 0 60px rgba(96, 165, 250, 0.3);
   }
 }
