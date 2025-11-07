@@ -1,10 +1,10 @@
 'use client'
 
-import { Bell, Search, User, ChevronRight } from 'lucide-react'
+import { Search, User, ChevronRight } from 'lucide-react'
 import { Input } from '../ui/Input'
-import { Button } from '../ui/Button'
 import { usePathname } from 'next/navigation'
 import { ThemeToggle } from '../ThemeToggle'
+import { Notifications } from '../Notifications'
 
 /**
  * Professional Header Component
@@ -96,21 +96,8 @@ export default function Header() {
         {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* Notifications */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="
-            relative w-10 h-10 p-0
-            hover:bg-gray-100 dark:hover:bg-gray-800
-            border border-gray-200 dark:border-gray-700
-          "
-        >
-          <Bell className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
-            <span className="text-white text-[10px] font-bold">3</span>
-          </span>
-        </Button>
+        {/* Notifications Dropdown */}
+        <Notifications />
 
         {/* User Menu */}
         <button className="
