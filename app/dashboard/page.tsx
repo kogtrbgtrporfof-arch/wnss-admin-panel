@@ -11,7 +11,8 @@ import {
   BarChart3,
   Settings,
   Sparkles,
-  Activity
+  Activity,
+  Database
 } from 'lucide-react'
 import { supabase, Book } from '@/lib/supabase'
 import { MetricCard } from '@/components/MetricCard'
@@ -20,6 +21,7 @@ import { Button } from '@/components/ui/Button'
 interface DashboardStats {
   totalBooks: number
   activeSubjects: number
+  storageUsed: string
   recentActivity: number
 }
 
@@ -32,6 +34,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalBooks: 0,
     activeSubjects: 12,
+    storageUsed: '2.4 GB',
     recentActivity: 48
   })
   const [recentBooks, setRecentBooks] = useState<Book[]>([])
